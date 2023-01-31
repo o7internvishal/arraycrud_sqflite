@@ -1,6 +1,8 @@
 import 'package:arraycrud_sqflite/user.dart';
 import 'package:arraycrud_sqflite/user_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:sqflite/sqflite.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,26 +53,36 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   List<User> userlist = [];
-  
+
   UserRepository userRepository = UserRepository();
+  Database? database;
+
   void addUser(User user) {
-    setState(() {
-      userlist.addAll(userRepository.getUser());
-    
-     
-      
-    });
+    // setState(() {
+    //   userlist.addAll(userRepository.getUser());
+    // });
   }
- @override
+
+  void getUsers() async {
+    final users = await userRepository.getUser();
+    setState((){
+        userlist.addAll(users);
+      });
+  }
+
+  @override
   void initState() {
-    
     super.initState();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      getUsers();
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
   }
+
   void showuserDialog() {
     TextEditingController nameController = new TextEditingController();
     TextEditingController addressController = new TextEditingController();
@@ -99,10 +111,9 @@ class _MyHomePageState extends State<MyHomePage> {
               ElevatedButton(
                   onPressed: () async {
                     await userRepository.insert(
-                        User(nameController.text, addressController.text));    
-                        userlist.add(User(nameController.text, addressController.text));
-                         
-                    // addUser(User(nameController.text, addressController.text));
+                        User(nameController.text, addressController.text));
+                    print(nameController.text);
+
                     Navigator.of(context).pop();
                   },
                   child: const Text("Add"))
@@ -140,24 +151,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   return Card(
                       child: ListTile(
                     title: Text(
-                      userlist[index].name,
+                      userlist[index].name.toString(),
                       style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w400,
                           color: Colors.blue),
                     ),
                     subtitle: Text(
-                      userlist[index].address,
+                      userlist[index].address.toString(),
                       style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w400,
                           color: Colors.blue),
                     ),
-                  )
-                  );
-                }  
-)
-                )
-        );
+                  ));
+                })));
   }
 }
