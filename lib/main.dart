@@ -55,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<User> userlist = [];
 
   UserRepository userRepository = UserRepository();
+  //  late UserDAO userDAO;
   Database? database;
 
   void addUser(User user) {
@@ -62,19 +63,32 @@ class _MyHomePageState extends State<MyHomePage> {
     //   userlist.addAll(userRepository.getUser());
     // });
   }
+  // void remove(User user) {
+  //   setState(() {
+  //     // userlist.remove(userlist(user));
+  //   });
+  // }
 
   void getUsers() async {
     final users = await userRepository.getUser();
-    setState((){
-        userlist.addAll(users);
-      });
+    print(users);
+    setState(() {
+      userlist.clear();
+      userlist.addAll(users);
+    });
   }
 
+  // void getUser() async {
+  //   final users = await userRepository.getUser();
+  //   setState((){
+  //       userlist.remove(users);
+  //     });
+  // }
   @override
   void initState() {
     super.initState();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      getUsers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      createDatabaseAndGetUsers();
     });
   }
 
@@ -83,10 +97,18 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  void showuserDialog() {
+  void createDatabaseAndGetUsers() async {
+    await userRepository.createDatabase();
+    getUsers();
+  }
+
+  void showuserDialog({bool isUpdate = false, int position = -1}) {
     TextEditingController nameController = new TextEditingController();
     TextEditingController addressController = new TextEditingController();
-
+    if (isUpdate) {
+      nameController.text = userlist[position].name;
+      addressController.text = userlist[position].address;
+    }
     showDialog(
         context: context,
         builder: (__) {
@@ -110,9 +132,15 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               ElevatedButton(
                   onPressed: () async {
-                    await userRepository.insert(
-                        User(nameController.text, addressController.text));
-                    print(nameController.text);
+                    if (isUpdate == true) {
+                      await userRepository.updateTask(
+                          User(nameController.text, addressController.text));
+                    } else {
+                      await userRepository.insert(
+                          User(nameController.text, addressController.text));
+                    }
+                    // User(nameController.text, addressController.text);
+                    getUsers();
 
                     Navigator.of(context).pop();
                   },
@@ -163,6 +191,31 @@ class _MyHomePageState extends State<MyHomePage> {
                           fontSize: 32,
                           fontWeight: FontWeight.w400,
                           color: Colors.blue),
+                    ),
+                    trailing: Column(
+                      children: [
+                        GestureDetector(
+                          child: const Icon(
+                            Icons.edit,
+                            color: Colors.red,
+                          ),
+                          onTap: () {
+                            showuserDialog(position: index, isUpdate: true);
+                            getUsers();
+                          },
+                        ),
+                        GestureDetector(
+                          child: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                          ),
+                          onTap: () async {
+                            // userRepository.remove(userlist[index]);
+                            await userRepository.remove(userlist[index]);
+                            getUsers();
+                          },
+                        ),
+                      ],
                     ),
                   ));
                 })));

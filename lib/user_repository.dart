@@ -1,3 +1,4 @@
+
 import 'package:arraycrud_sqflite/user.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,65 +13,53 @@ class UserRepository {
     createDatabase();
     print(" in constructor");
   }
-  // void createDatabase() async {
-  //   var databasesPath = await getDatabasesPath();
-  //   String path = join(databasesPath, 'demo.db');
-  //   Future<Database?> Opendb({
-  //     path,
-  //     version: 1,
-  //   }) async {
-  //     print(" in database created before open db");
-  //     db = await openDatabase((await getDatabasesPath()));
-  //     print(" in database created after open db");
-  //     onCreate:
-  //     (Database db, int version) async {
-  //       print(" in database created in create method");
 
-  //       await db.execute(
-  //           'CREATE TABLE IF NOT EXISTS $userTableName(name TEXT,address TEXT');
-  //       print(" in database created");
-  //     };
-  //   }
-  // }
   Future<void> createDatabase() async {
     _database = await openDatabase(
       join(await getDatabasesPath(), 'demo.db'),
       onCreate: (db, version) async {
-        await db.execute(
-            'CREATE TABLE  $userTableName(name TEXT,address TEXT)');
+        await db
+            .execute('CREATE TABLE  $userTableName(name TEXT,address TEXT)');
         //   return db.execute(
         //   'CREATE TABLE task(id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, task TEXT, isCompleted INTEGER)',
         //);
       },
       version: 1,
     );
+    print("Create Repo");
   }
 
   Future<void> insert(User todo) async {
     await _database?.insert(userTableName, todo.toMap());
   }
 
+  // Future<void> delete(User user) async{
+  // await _database?.delete(user.toString());
+  // }
+
   Future<List<User>> getUser() async {
+    print(_database);
     if (_database != null) {
       final List<Map<String, dynamic>> maps =
           await _database!.query(userTableName);
-      return [];//_database!.query(userTableName);
-      print(maps);
+      return List.generate(maps.length, (i) {
+        return User(
+          maps[i]['name'],
+          maps[i]['address'],
+        );
+      });
     }
     return [];
   }
+
+  Future<void> updateTask(User user) async {
+    await _database?.update(userTableName, user.toMap(),
+        where: 'name = ?', whereArgs: [user.name]);
+  }
+
+  Future<void> remove(User userlist) async {
+    await _database?.delete(userTableName,
+        where: 'name = ?',
+        whereArgs: [userlist.name]).then((value) => print(" in remove"));
+  }
 }
-
-
-
-
-
-// await database.transaction((txn) async {
-//   int id1 = await txn.rawInsert(
-//       'INSERT INTO Test(name, value, num) VALUES("some name", 1234, 456.789)');
-//   print('inserted1: $id1');
-//   int id2 = await txn.rawInsert(
-//       'INSERT INTO Test(name, value, num) VALUES(?, ?, ?)',
-//       ['another name', 12345678, 3.1416]);
-//   print('inserted2: $id2');
-// });

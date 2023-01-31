@@ -1,4 +1,3 @@
-
 class User{
 // Database db
     String name;
